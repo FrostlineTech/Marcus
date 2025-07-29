@@ -1,0 +1,37 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables and secrets
+.env
+
+# VS Code / Editor settings
+.vscode/
+*.code-workspace
+
+# macOS / Windows system files
+.DS_Store
+Thumbs.db
+
+# Virtual environments (if used later)
+venv/
+env/
+
+# Log files
+*.log
+
+# Python egg info
+*.egg-info/
+dist/
+build/
+
+# Discord cache or database (if applicable later)
+*.sqlite3
+*.db
+
+# Test results / coverage
+htmlcov/
+coverage.xml
+*.cover
+.pytest_cache/
