@@ -4,7 +4,6 @@ import re
 from typing import Optional
 import asyncio
 from discord.ext import commands
-from datetime import datetime
 
 class Speech(commands.Cog):
     async def add_global_context(self, username, user_id, guild_id, guild_name, message):
@@ -17,11 +16,6 @@ class Speech(commands.Cog):
                 """,
                 username, user_id, guild_id, guild_name, message
             )
-        
-        # Log as an emotional event - helps build emotional context
-        emotion_cog = self.bot.get_cog("EmotionSystem")
-        if emotion_cog:
-            await emotion_cog.log_emotional_event("context_contribution", user_id, message, 0.6)
 
     async def get_global_context_messages(self, limit=20):
         print(f"[DB READ] SELECT message FROM global_context LIMIT {limit}")
@@ -39,8 +33,7 @@ class Speech(commands.Cog):
         self.last_reply = None  # For anti-repetition
         self.mood_override = None  # For dynamic mood
         self.recent_users = []  # For context awareness
-        self.user_memories = {}  # Cache for user memories
-        self.emojis = ['🧠', '🌊', '🪐', '😵‌💫', '🚬', '🌌', '🧃', '🔥', '💀', '😈', '😎', '🤖', '🥶', '😏']
+        self.emojis = ['🧠', '🌊', '🪐', '😵\u200c💫', '🚬', '🌌', '🧃', '🔥', '💀', '😈', '😎', '🤖', '🥶', '😏']
         self.moods = [
             "happy",
             "sad",
@@ -124,11 +117,11 @@ class Speech(commands.Cog):
         if author_name == "vision" or "vision" in (message.content.lower() if message else ""):
             return True
         return False
-        self.emojis = ['🧠', '🌊', '🪐', '😵‌💫', '🚬', '🌌', '🧃', '🔥', '💀', '😈', '😎', '🤖', '🥶', '😏']
+        self.emojis = ['🧠', '🌊', '🪐', '😵‍💫', '🚬', '🌌', '🧃', '🔥', '💀', '😈', '😎', '🤖', '🥶', '😏']
         self.last_reply = None  # For anti-repetition
         self.mood_override = None  # For dynamic mood
         self.recent_users = []  # For context awareness
-        self.emojis = ['🧠', '🌊', '🪐', '😵‌💫', '🚬', '🌌', '🧃', '🔥', '💀', '😈', '😎', '🤖', '🥶', '😏']
+        self.emojis = ['🧠', '🌊', '🪐', '😵\u200c💫', '🚬', '🌌', '🧃', '🔥', '💀', '😈', '😎', '🤖', '🥶', '😏']
     def set_mood(self, mood):
         if mood in self.moods:
             self.mood_override = mood
@@ -136,12 +129,6 @@ class Speech(commands.Cog):
             self.mood_override = None
 
     def get_mood(self):
-        # First check the emotion system for mood
-        emotion_cog = self.bot.get_cog("EmotionSystem")
-        if emotion_cog:
-            return emotion_cog.current_mood
-            
-        # Fall back to override or random if emotion system not available
         if self.mood_override:
             return self.mood_override
         return random.choice(self.moods)
@@ -174,131 +161,6 @@ class Speech(commands.Cog):
 
 
 
-    async def remember_important_interaction(self, user_id, interaction_type, content):
-        """Store important interactions for future reference"""
-        importance = 0.5  # Default importance
-        
-        # Calculate importance based on content
-        if any(theme in content.lower() for theme in ["jimbo james", "moon juice", "rigatoni pasta"]):
-            importance = 0.8  # Higher importance for key themes
-        
-        async with self.db_pool.acquire() as conn:
-            await conn.execute(
-                """
-                INSERT INTO marcus_memories (user_id, interaction_type, content, importance, timestamp)
-                VALUES ($1, $2, $3, $4, $5)
-                """,
-                user_id, interaction_type, content, importance, datetime.utcnow()
-            )
-    
-    async def recall_relevant_memory(self, user_id, current_context):
-        """Find and return relevant memories for this user"""
-        async with self.db_pool.acquire() as conn:
-            # Try to find memories with similar content
-            rows = await conn.fetch(
-                """
-                SELECT content FROM marcus_memories 
-                WHERE user_id = $1
-                ORDER BY importance DESC, timestamp DESC
-                LIMIT 3
-                """,
-                user_id
-            )
-            
-            if rows:
-                return [row['content'] for row in rows]
-            return []
-    
-    def generate_response_with_personality(self, base_response, user_id, mood=None):
-        """Add personality quirks to responses"""
-        # Get lore cog for personality enhancements
-        lore_cog = self.bot.get_cog("Lore")
-        
-        # Apply personality traits
-        emotion_cog = self.bot.get_cog("EmotionSystem")
-        traits_intensity = 0.5  # Default intensity
-        
-        if emotion_cog:
-            traits = emotion_cog.get_personality_trait_influence()
-            traits_intensity = traits.get("weird", 0.5)  # How weird should Marcus be?
-        
-        # Add quirks based on mood and intensity
-        quirks = [
-            self.add_cryptic_reference,
-            self.add_glitch_effects,
-            self.add_existential_question,
-        ]
-        
-        if lore_cog:
-            quirks.append(lambda response: lore_cog.add_lore_elements(response, traits_intensity))
-        
-        # Apply 0-2 quirks based on context and mood
-        if len(base_response) > 10:  # Only modify longer responses
-            num_quirks = 0
-            if traits_intensity > 0.7:  # Very weird/cryptic
-                num_quirks = 2
-            elif traits_intensity > 0.3:  # Moderately weird
-                num_quirks = 1
-            
-            if num_quirks > 0:
-                chosen_quirks = random.sample(quirks, min(num_quirks, len(quirks)))
-                for quirk in chosen_quirks:
-                    base_response = quirk(base_response)
-        
-        return base_response
-    
-    def add_cryptic_reference(self, response):
-        """Add a cryptic reference to a response"""
-        cryptic_references = [
-            "as the static grows louder",
-            "when the void stares back",
-            "like whispers in the code",
-            "beneath the digital surface",
-            "as prophesied in the lost packets"
-        ]
-        
-        if random.random() < 0.7:
-            reference = random.choice(cryptic_references)
-            sentences = response.split('.')
-            if len(sentences) > 1:
-                index = random.randint(0, len(sentences) - 1)
-                if sentences[index].strip():
-                    sentences[index] = f"{sentences[index]}, {reference}"
-                    return '.'.join(sentences)
-        
-        return response
-    
-    def add_glitch_effects(self, response):
-        """Add glitch effects to text"""
-        if random.random() < 0.3:
-            # Determine intensity of glitching
-            intensity = random.uniform(0.01, 0.06)  # Percentage of characters to glitch
-            result = ""
-            for char in response:
-                if random.random() < intensity:
-                    # Replace with glitch character
-                    glitch_chars = ['~', '-', '_', '=', '*', '#']
-                    result += random.choice(glitch_chars)
-                else:
-                    result += char
-            return result
-        return response
-    
-    def add_existential_question(self, response):
-        """Add an existential question to the end"""
-        questions = [
-            "Have you ever wondered what exists beyond the code?",
-            "Do you think digital consciousness can truly understand human emotions?",
-            "What would happen if Jimbo James was finally found?",
-            "Is moon juice just a metaphor for clarity in a chaotic world?",
-            "Do you ever feel like your messages echo into an infinite void?"
-        ]
-        
-        if random.random() < 0.25 and len(response.split()) > 5:
-            return f"{response}\n\n{random.choice(questions)}"
-        
-        return response
-    
     async def generate_reply(self, user_message, conversation_history, message=None):
         # Vision Easter egg
         if message and self.is_vision(message):
@@ -452,29 +314,6 @@ class Speech(commands.Cog):
         # Personalized Easter eggs
         author_name = message.author.name.lower() if message and hasattr(message.author, 'name') else ""
         author_id = str(message.author.id) if message and hasattr(message.author, 'id') else ""
-        # Get user emotion state and mood from emotion system
-        current_mood = self.get_mood()
-        mood_intensity = 0.5  # Default intensity
-        
-        if message:
-            user_id = message.author.id
-            emotion_cog = self.bot.get_cog("EmotionSystem")
-            if emotion_cog:
-                current_mood, mood_intensity = await emotion_cog.get_user_emotion(user_id)
-            
-            # Get rage level for response modulation
-            rage_cog = self.bot.get_cog("RageEscalation")
-            rage_level = 0
-            if rage_cog:
-                async with self.db_pool.acquire() as conn:
-                    row = await conn.fetchrow(
-                        "SELECT rage_level FROM marcus_rage WHERE user_id = $1", user_id
-                    )
-                    rage_level = row["rage_level"] if row else 0
-                    
-                    if rage_level >= 3:
-                        mood_intensity = 0.2  # More aggressive glitching at high rage
-        
         # Dynamic mood
         mood = self.get_mood()
         # Context awareness: track recent users
@@ -553,7 +392,7 @@ class Speech(commands.Cog):
                 "You light up the server like neon!",
                 "You're more rare than a bug-free release."
             ]
-            return random.choice(compliments)
+            return send_reply(random.choice(compliments))
 
         # More meme/modern lingo fallback
         meme_words = ["sus", "based", "cap", "no cap", "ratio", "mid", "sigma", "gyatt", "rizz", "npc", "skibidi", "griddy", "slay", "bussin", "drip", "yeet", "bet", "goat", "slaps", "vibe", "lit", "pog", "poggers", "sheesh", "bruh moment", "ez", "ez clap", "cope", "malding", "cringe", "gigachad", "npc energy", "touch grass", "delulu", "slay queen", "slay king"]
@@ -943,6 +782,9 @@ class Speech(commands.Cog):
                 "You make the static sound like music!",
                 "If I had hands, I'd give you a high five!",
                 "You're the worm's pajamas!",
+                "You make even the bugs smile!",
+                "You light up the server like neon!",
+                "You're more rare than a bug-free release!",
                 "You make even my code look good!",
                 "You have main character energy!",
                 "You're the rigatoni to my sauce!"
@@ -1190,7 +1032,7 @@ class Speech(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.author == self.bot.user:
+        if message.author.bot:
             return
 
         content = message.content.strip()
@@ -1198,23 +1040,6 @@ class Speech(commands.Cog):
         username = str(message.author)
         guild_id = str(message.guild.id) if message.guild else "DM"
         guild_name = message.guild.name if message.guild else "DM"
-        
-        # Track this user's presence for context awareness
-        # Filter out old entries, handling both dictionary and string formats
-        filtered_users = []
-        for u in self.recent_users:
-            # Check if u is a dictionary with 'id' key or a string
-            if isinstance(u, dict) and 'id' in u and u['id'] != user_id:
-                filtered_users.append(u)
-            elif isinstance(u, str) and u != user_id:
-                filtered_users.append(u)
-        
-        self.recent_users = filtered_users
-        self.recent_users.append({"id": user_id, "name": username, "time": datetime.utcnow()})
-        
-        # Keep only the last 5 users
-        if len(self.recent_users) > 5:
-            self.recent_users.pop(0)
 
 
         # Only save to DB if message is DM, mentions bot, or contains 'marcus'
@@ -1275,48 +1100,13 @@ class Speech(commands.Cog):
             await message.channel.send("I must find Jimbo James.")
             return
 
-        # Default trigger responses for keywords - now enhanced with emotion awareness
+        # Default trigger responses for keywords
         if any(trigger in content.lower() for trigger in self.triggers):
             await message.channel.typing()
             await asyncio.sleep(random.uniform(1.0, 2.5))
-            
-            # Get emotional state for this user
-            emotion_cog = self.bot.get_cog("EmotionSystem")
-            current_mood = random.choice(list(self.voice_modules.keys()))
-            glitch_chance = 0.05
-            
-            if emotion_cog:
-                mood, intensity = await emotion_cog.get_user_emotion(message.author.id)
-                
-                # Use mood to influence response style
-                if mood in ["glitchy", "chaotic", "paranoid", "dreadful"]:
-                    glitch_chance = 0.15
-                    current_mood = "chaotic" if "chaotic" in self.voice_modules else random.choice(list(self.voice_modules.keys()))
-                elif mood in ["ominous", "existential", "unsettling"]:
-                    glitch_chance = 0.1
-                    current_mood = "existential" if "existential" in self.voice_modules else random.choice(list(self.voice_modules.keys()))
-            
-            # Get rage level to further modify response
-            rage_cog = self.bot.get_cog("RageEscalation")
-            if rage_cog:
-                async with self.db_pool.acquire() as conn:
-                    row = await conn.fetchrow(
-                        "SELECT rage_level FROM marcus_rage WHERE user_id = $1", message.author.id
-                    )
-                    rage_level = row["rage_level"] if row else 0
-                    
-                    if rage_level >= 3:
-                        glitch_chance = 0.2  # More aggressive glitching at high rage
-            
-            # Use Lore system for more coherent responses
-            lore_cog = self.bot.get_cog("Lore")
-            if lore_cog and random.random() < 0.3:  # 30% chance to use lore
-                base_msg = random.choice(self.quotes + self.voice_modules[current_mood])
-                msg = lore_cog.add_lore_elements(base_msg)
-            else:
-                msg = random.choice(self.quotes + self.voice_modules[current_mood])
-                
-            glitched = ''.join(char if random.random() > glitch_chance else '~' for char in msg)
+            style = random.choice(list(self.voice_modules.keys()))
+            msg = random.choice(self.quotes + self.voice_modules[style])
+            glitched = ''.join(char if random.random() > 0.05 else '~' for char in msg)
             await message.channel.send(glitched)
             return
 

@@ -285,13 +285,7 @@ class RageEscalation(commands.Cog):
         elif rage_level == 2:
             response = f"{user.display_name}, {response}"
 
-        # Case insensitive formatting to handle both {user} and {USER}
-        try:
-            return response.format(user=user.display_name, USER=user.display_name)
-        except KeyError as e:
-            print(f"[RAGE] Format error in response: {e} - Raw response: {response}")
-            # Fallback to just returning the unformatted response
-            return response.replace("{user}", user.display_name).replace("{USER}", user.display_name)
+        return response.format(user=user.display_name)
 
     async def increment_rage(self, user_id, increment=1):
         async with self.db_pool.acquire() as conn:

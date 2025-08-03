@@ -26,7 +26,6 @@ TEST_GUILD_ID_2 = discord.Object(id=1283291824232075345)  #Developer server give
 # Intents
 intents = discord.Intents.default()
 intents.message_content = True
-intents.voice_states = True  # Required for voice channel events
 
 # Bot setup — disable default help_command to avoid conflicts
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
@@ -133,22 +132,6 @@ async def load_modules():
     # Load rage_escalation cog with db_pool
     import rage_escalation
     await rage_escalation.setup(bot, db_pool)
-    
-    # Load emotion system cog if exists
-    try:
-        import emotions
-        await emotions.setup(bot, db_pool)
-        print("[+] Loaded EmotionSystem cog.")
-    except ImportError as e:
-        print(f"[!] Failed to load EmotionSystem cog: {e}")
-        
-    # Load voice cog for voice channel functionality
-    try:
-        import voice
-        await voice.setup(bot, db_pool)
-        print("[+] Loaded Voice cog.")
-    except ImportError as e:
-        print(f"[!] Failed to load Voice cog: {e}")
 
 loaded = False
 
