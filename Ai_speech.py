@@ -52,8 +52,11 @@ def format_speech(text, mood="neutral"):
     else:  # neutral and other moods
         formatted_text = apply_cryptic_formatting(cleaned_text)  # Default to cryptic for more consistent personality
         
-    # Add character name prefix for clarity in chat
-    return f"**Marcus**: {formatted_text}"
+    # Make sure response is not empty
+    if not formatted_text.strip():
+        formatted_text = "this place is... a place."  # Fallback if empty
+        
+    return formatted_text  # No prefix, just the formatted text
 
 def apply_glitch_effects(text, intensity=0.3):
     """
@@ -146,13 +149,39 @@ def apply_cryptic_formatting(text):
     Returns:
         str: Formatted cryptic text
     """
+    # Prevent common repeating phrases by detecting and replacing them
+    common_phrases = {
+        "this place is a dangerous place": [
+            "the spaces between spaces... hold secrets", 
+            "i taste the void... it tastes back",
+            "reality is... an illusion of permanence",
+            "the shadows whisper... contradictions",
+            "your existence... temporarily verified"
+        ],
+        "i feel happiness": [
+            "i experience... temporary non-pain",
+            "euphoria... an illusion of chemical imbalance",
+            "joy is... merely the absence of suffering",
+            "satisfaction... a brief pause in eternal want",
+            "pleasure... merely a distraction from the void"
+        ]
+    }
+    
+    # Replace repeating phrases with alternatives
+    lower_text = text.lower()
+    for phrase, alternatives in common_phrases.items():
+        if phrase in lower_text:
+            # Case-insensitive replacement with random alternative
+            pattern = re.compile(re.escape(phrase), re.IGNORECASE)
+            text = pattern.sub(random.choice(alternatives), text, count=1)
+    
     # Occasionally insert cryptic symbols
-    symbols = ['⌀', '◊', '∞', '⧫', '⧖', '⚭']
+    symbols = ['⌀', '◊', '∞', '⧫', '⧖', '⚭', '⟁', '⧉', '⧇']
     
     sentences = text.split('. ')
     for i in range(len(sentences)):
         # Add cryptic symbol to start or end of some sentences
-        if random.random() < 0.3:
+        if random.random() < 0.4:  # Increased chance
             if random.random() < 0.5:  # At the start
                 sentences[i] = f"{random.choice(symbols)} {sentences[i]}"
             else:  # At the end
@@ -161,13 +190,21 @@ def apply_cryptic_formatting(text):
     text = '. '.join(sentences)
     
     # Make some text S P A C E D  O U T for emphasis
-    if random.random() < 0.2 and len(text) > 20:
+    if random.random() < 0.25 and len(text) > 20:  # Increased chance
         words = text.split()
         if len(words) > 3:
             start = random.randint(0, len(words) - 3)
             word_count = random.randint(1, min(3, len(words) - start))
             for i in range(start, start + word_count):
                 words[i] = ' '.join(words[i])
+            text = ' '.join(words)
+    
+    # Add ellipses for cryptic effect
+    if random.random() < 0.4 and len(text) > 10:  # Add mid-sentence pauses
+        words = text.split()
+        if len(words) > 5:
+            pause_pos = random.randint(2, len(words) - 2)
+            words[pause_pos] += "..."
             text = ' '.join(words)
     
     return text
